@@ -39,7 +39,7 @@ class IGNMap(object):
         self.size = (self.lower_right_corner[0] - self.upper_left_corner[0] + 1,
                      self.lower_right_corner[1] - self.upper_left_corner[1] + 1)
 
-        def cache_folder(self):
+    def cache_folder(self):
         return Path("tmp_{}-{}_{}-{}_{}".format(self.upper_left_corner[0], self.upper_left_corner[1],
                                                 self.lower_right_corner[0], self.lower_right_corner[1], self.zoom))
 
@@ -50,7 +50,7 @@ class IGNMap(object):
             for y in range(self.upper_left_corner[0], min(self.upper_left_corner[0] + self.size[0], self.max_tile[0])):
                 path = self.cache_folder() / "{}_{}.jpg".format(x - self.upper_left_corner[1], y - self.upper_left_corner[0])
                 if path.exists():
-                    img = None
+                    img = Image.open(path)
                 else:
                     img = self.request_tile(x, y)
                     img.save(path)
