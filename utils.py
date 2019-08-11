@@ -6,27 +6,30 @@ from lxml import etree
 from pandas import DataFrame
 from scipy.optimize import brentq
 
-def d2r(angle_deg):
+
+def decimal_degrees_to_rad(location):
+    return tuple(reversed(tuple(map(math.radians, map(float, location.split(","))))))
+
+
+def dms_to_rad(angle_deg):
     degre = float(angle_deg.split('°')[0])
     minutes = float(angle_deg.split('°')[1].split("'")[0])
-    secondes = float(angle_deg.split('°')[1].split("'")[1])
-
-    angle_dec = degre + (minutes / 60) + (secondes / 3600)
-
+    seconds = float(angle_deg.split('°')[1].split("'")[1])
+    angle_dec = degre + (minutes / 60) + (seconds / 3600)
     return math.radians(angle_dec)
 
 
 def rad_to_wmts(map, point_rad, earth_radius=6378137.0, render_pixel_size=0.00028):
     tile_radius = map.scale_denominator * render_pixel_size * map.tile_size[1]
-    x = earth_radius * d2r(point_rad[0])
-    y = earth_radius * math.log(math.tan(d2r(point_rad[1]) / 2 + math.pi / 4))
+    x = earth_radius * point_rad[0]
+    y = earth_radius * math.log(math.tan(point_rad[1] / 2 + math.pi / 4))
 
     col = +int((x - map.top_left_corner[0]) / tile_radius)
     row = -int((y - map.top_left_corner[1]) / tile_radius)
     return col, row
 
 
-def wmts_to_rad(map, point, earth_radius=6378137.0, render_pixel_size=0.00028):
+def wmts_to_deg(map, point, earth_radius=6378137.0, render_pixel_size=0.00028):
     tile_radius = map.scale_denominator * render_pixel_size * map.tile_size[1]
     coords = (map.top_left_corner[0] + point[0] * tile_radius, map.top_left_corner[1] - point[1] * tile_radius)
     x = math.degrees(coords[0] / earth_radius)

@@ -1,9 +1,17 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sat May 27 18:36:36 2017
+"""IGNite.
 
-@author: amine
+Usage:
+  ignite.py <upper_left> <lower_right> <zoom> [--out_name <file>]
+                                              [--save_tiles]
+  ignite.py (-h | --help)
+
+Options:
+  -h --help          Show this screen.
+  --out_name <file>  Output filename [default: out].
+  --save_tiles       Save temporary tiles, for caching.
+
 """
+from docopt import docopt
 from io import BytesIO
 from multiprocessing.pool import Pool
 from pathlib import Path
@@ -13,14 +21,15 @@ import tqdm
 from PIL import Image
 from osgeo import gdal
 
-from utils import get_capabilities, rad_to_wmts, wmts_to_rad
+from utils import get_capabilities, rad_to_wmts, wmts_to_deg, decimal_degrees_to_rad
 
 
 class IGNMap(object):
-    def __init__(self, min_point, max_point, zoom):
+    def __init__(self, min_point, max_point, zoom, args={}):
         self.min_point = min_point
         self.max_point = max_point
         self.zoom = zoom
+        self.args = args
 
         self.size = None
         self.capabilities = get_capabilities()[1][str(zoom)]
@@ -62,13 +71,13 @@ class IGNMap(object):
 
         for tile, img in tqdm.tqdm(zip(tiles, images), total=len(tiles), desc="Merging"):
             map_img.paste(img, ((tile[0] - self.min_point[0]) * 256, (tile[1] - self.min_point[1]) * 256))
-        map_img.save('out.jpg', "JPEG")
+        map_img.save("{}.jpg".format(self.args["--out_name"]), "JPEG")
         return map_img
 
     def set_georeference(self, dstName, sourceDS, frmt="GTiff"):
         opt = gdal.TranslateOptions(format=frmt,
-                                    outputBounds=[*wmts_to_rad(self, self.min_point),
-                                                  *wmts_to_rad(self, self.max_point)],
+                                    outputBounds=[*wmts_to_deg(self, self.min_point),
+                                                  *wmts_to_deg(self, self.max_point)],
                                     outputSRS="WGS84")
         gdal.Translate(dstName, sourceDS, options=opt)
 
@@ -79,6 +88,10 @@ class IGNMap(object):
 
 
 if __name__ == '__main__':
-    ign_map = IGNMap(("6°35'41.248", "45°57'30.243"), ("7°0'43.176", "45°44'39.177"), 15)
+    args = docopt(__doc__, version='IGNite 1.0')
+    ign_map = IGNMap(decimal_degrees_to_rad(args["<upper_left>"]),
+                     decimal_degrees_to_rad(args["<lower_right>"]),
+                     int(args["<zoom>"]),
+                     args)
     ign_map.generate()
-    ign_map.set_georeference("out.pdf", "out.jpg", frmt="PDF")
+    ign_map.set_georeference("{}.pdf".format(args["--out_name"]), "{}.jpg".format(args["--out_name"]), frmt="PDF")
