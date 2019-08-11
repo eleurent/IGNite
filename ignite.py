@@ -5,9 +5,11 @@ Created on Sat May 27 18:36:36 2017
 @author: amine
 """
 from io import BytesIO
+from multiprocessing.pool import Pool
 from pathlib import Path
 
 import requests
+import tqdm
 from PIL import Image
 from osgeo import gdal
 
@@ -41,7 +43,7 @@ class IGNMap(object):
         else:
             img = self.fetch_tile(tile)
             img.save(path)
-        self.map.paste(img, ((tile[0] - self.min_point[0]) * 256, (tile[1] - self.min_point[1]) * 256))
+        return img
 
     def fetch_tile(self, tile):
         url = "https://wxs.ign.fr/an7nvfzojv5wa96dsga5nk8w/geoportail/wmts?layer=GEOGRAPHICALGRIDSYSTEMS.MAPS" \
@@ -51,14 +53,17 @@ class IGNMap(object):
         return Image.open(BytesIO(response.content))
 
     def generate(self):
-        self.map = Image.new('RGB', (256 * self.size[0], 256 * self.size[1]))
         self.cache_folder.mkdir(parents=True, exist_ok=True)
+        map_img = Image.new('RGB', (256 * self.size[0], 256 * self.size[1]))
         tiles = [(x, y) for x in range(self.min_point[0], self.max_point[0] + 1)
                         for y in range(self.min_point[1], self.max_point[1] + 1)]
-        for tile in tiles:
-            self.set_tile(tile)
-        self.map.save('out.jpg', "JPEG")
-        return self.map
+        with Pool(4) as p:
+            images = list(tqdm.tqdm(p.imap(self.set_tile, tiles), total=len(tiles), desc="Fetching"))
+
+        for tile, img in tqdm.tqdm(zip(tiles, images), total=len(tiles), desc="Merging"):
+            map_img.paste(img, ((tile[0] - self.min_point[0]) * 256, (tile[1] - self.min_point[1]) * 256))
+        map_img.save('out.jpg', "JPEG")
+        return map_img
 
     def set_georeference(self, dstName, sourceDS, frmt="GTiff"):
         opt = gdal.TranslateOptions(format=frmt,
@@ -74,7 +79,6 @@ class IGNMap(object):
 
 
 if __name__ == '__main__':
-    carte = IGNMap(("6°35'41.248", "45°57'30.243"), ("7°0'43.176", "45°44'39.177"), 12)
-    print(carte.size[0] * carte.size[1], "tiles")
-    carte.generate()
-    carte.set_georeference("out.pdf", "out.jpg", frmt="PDF")
+    ign_map = IGNMap(("6°35'41.248", "45°57'30.243"), ("7°0'43.176", "45°44'39.177"), 15)
+    ign_map.generate()
+    ign_map.set_georeference("out.pdf", "out.jpg", frmt="PDF")
