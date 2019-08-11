@@ -15,9 +15,9 @@ from utils import get_capabilities, rad_to_wmts, wmts_to_rad
 
 
 class IGNMap(object):
-    def __init__(self, upper_left_corner, lower_right_corner, zoom):
-        self.upper_left_corner = upper_left_corner
-        self.lower_right_corner = lower_right_corner
+    def __init__(self, min_point, max_point, zoom):
+        self.min_point = min_point
+        self.max_point = max_point
         self.zoom = zoom
 
         self.size = None
@@ -26,53 +26,55 @@ class IGNMap(object):
         self.scale_denominator = float(self.capabilities['ScaleDenominator'])
         self.tile_size = (int(self.capabilities['TileWidth']), int(self.capabilities['TileHeight']))
         self.top_left_corner = tuple(map(float, self.capabilities['TopLeftCorner'].split(' ')))
-        self.set_coordinates(upper_left_corner, lower_right_corner)
+        self.set_coordinates(min_point, max_point)
 
-    def set_coordinates(self, upper_left_corner, lower_right_corner):
-        self.upper_left_corner = rad_to_wmts(self, upper_left_corner)
-        self.lower_right_corner = rad_to_wmts(self, lower_right_corner)
-        self.size = (self.lower_right_corner[0] - self.upper_left_corner[0] + 1,
-                     self.lower_right_corner[1] - self.upper_left_corner[1] + 1)
+    def set_coordinates(self, min_point, max_point):
+        self.min_point = rad_to_wmts(self, min_point)
+        self.max_point = rad_to_wmts(self, max_point)
+        self.size = (self.max_point[0] - self.min_point[0] + 1,
+                     self.max_point[1] - self.min_point[1] + 1)
 
-    def request_tile(self, x, y):
+    def set_tile(self, tile):
+        path = self.cache_folder / "{}_{}.jpg".format(tile[0] - self.min_point[0], tile[1] - self.min_point[1])
+        if path.exists():
+            img = Image.open(path)
+        else:
+            img = self.fetch_tile(tile)
+            img.save(path)
+        self.map.paste(img, ((tile[0] - self.min_point[0]) * 256, (tile[1] - self.min_point[1]) * 256))
+
+    def fetch_tile(self, tile):
         url = "https://wxs.ign.fr/an7nvfzojv5wa96dsga5nk8w/geoportail/wmts?layer=GEOGRAPHICALGRIDSYSTEMS.MAPS" \
               "&style=normal&tilematrixset=PM&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg" \
-              "&TileMatrix={}&TileCol={}&TileRow={}".format(self.zoom, x, y)
+              "&TileMatrix={}&TileCol={}&TileRow={}".format(self.zoom, tile[0], tile[1])
         response = requests.get(url)
         return Image.open(BytesIO(response.content))
 
     def generate(self):
-        map_IGN = Image.new('RGB', (256 * self.size[0], 256 * self.size[1]))
+        self.map = Image.new('RGB', (256 * self.size[0], 256 * self.size[1]))
         self.cache_folder.mkdir(parents=True, exist_ok=True)
-        for x in range(self.upper_left_corner[0], min(self.upper_left_corner[0] + self.size[0], self.max_tile[0])):
-            for y in range(self.upper_left_corner[1], min(self.upper_left_corner[1] + self.size[1], self.max_tile[1])):
-                path = self.cache_folder / "{}_{}.jpg".format(x - self.upper_left_corner[0], y - self.upper_left_corner[1])
-                if path.exists():
-                    img = Image.open(path)
-                else:
-                    img = self.request_tile(x, y)
-                    img.save(path)
-                map_IGN.paste(img, ((x - self.upper_left_corner[0]) * 256, (y - self.upper_left_corner[1]) * 256))
-                map_IGN.save('map_IGN.jpg', "JPEG")
-        return map_IGN
+        tiles = [(x, y) for x in range(self.min_point[0], self.max_point[0] + 1)
+                        for y in range(self.min_point[1], self.max_point[1] + 1)]
+        for tile in tiles:
+            self.set_tile(tile)
+        self.map.save('out.jpg', "JPEG")
+        return self.map
 
     def set_georeference(self, dstName, sourceDS, frmt="GTiff"):
         opt = gdal.TranslateOptions(format=frmt,
-                                    outputBounds=[*wmts_to_rad(self, self.upper_left_corner),
-                                                  *wmts_to_rad(self, self.lower_right_corner)],
+                                    outputBounds=[*wmts_to_rad(self, self.min_point),
+                                                  *wmts_to_rad(self, self.max_point)],
                                     outputSRS="WGS84")
         gdal.Translate(dstName, sourceDS, options=opt)
 
     @property
     def cache_folder(self):
-        return Path("tmp_{}-{}_{}-{}_{}".format(self.upper_left_corner[0], self.upper_left_corner[1],
-                                                self.lower_right_corner[0], self.lower_right_corner[1], self.zoom))
+        return Path("tmp_{}-{}_{}-{}_{}".format(self.min_point[0], self.min_point[1],
+                                                self.max_point[0], self.max_point[1], self.zoom))
 
 
 if __name__ == '__main__':
     carte = IGNMap(("6°35'41.248", "45°57'30.243"), ("7°0'43.176", "45°44'39.177"), 12)
     print(carte.size[0] * carte.size[1], "tiles")
     carte.generate()
-    #    carte.set_georeference("map_IGN_geo.tiff", "map_IGN.jpg", frmt = "GTiff")
-    #    carte.set_georeference("map_IGN_geo.jpg", "map_IGN.jpg", frmt = "JPEG")
-    carte.set_georeference("pyr_geo.pdf", "map_IGN.jpg", frmt="PDF")
+    carte.set_georeference("out.pdf", "out.jpg", frmt="PDF")
