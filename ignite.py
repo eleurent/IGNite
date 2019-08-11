@@ -11,7 +11,7 @@ import requests
 from PIL import Image
 from osgeo import gdal
 
-from utils import get_capabilities, rad_to_wmts
+from utils import get_capabilities, rad_to_wmts, wmts_to_rad
 
 
 class IGNMap(object):
@@ -44,20 +44,23 @@ class IGNMap(object):
     def generate(self):
         map_IGN = Image.new('RGB', (256 * self.size[0], 256 * self.size[1]))
         self.cache_folder.mkdir(parents=True, exist_ok=True)
-        for x in range(self.upper_left_corner[1], min(self.upper_left_corner[1] + self.size[1], self.max_tile[1])):
-            for y in range(self.upper_left_corner[0], min(self.upper_left_corner[0] + self.size[0], self.max_tile[0])):
-                path = self.cache_folder / "{}_{}.jpg".format(x - self.upper_left_corner[1], y - self.upper_left_corner[0])
+        for x in range(self.upper_left_corner[0], min(self.upper_left_corner[0] + self.size[0], self.max_tile[0])):
+            for y in range(self.upper_left_corner[1], min(self.upper_left_corner[1] + self.size[1], self.max_tile[1])):
+                path = self.cache_folder / "{}_{}.jpg".format(x - self.upper_left_corner[0], y - self.upper_left_corner[1])
                 if path.exists():
                     img = Image.open(path)
                 else:
                     img = self.request_tile(x, y)
                     img.save(path)
-                map_IGN.paste(img, ((x - self.upper_left_corner[1]) * 256, (y - self.upper_left_corner[0]) * 256))
+                map_IGN.paste(img, ((x - self.upper_left_corner[0]) * 256, (y - self.upper_left_corner[1]) * 256))
                 map_IGN.save('map_IGN.jpg', "JPEG")
         return map_IGN
 
     def set_georeference(self, dstName, sourceDS, frmt="GTiff"):
-        opt = gdal.TranslateOptions(format=frmt, outputBounds=get_corner_tiles(), outputSRS="WGS84")
+        opt = gdal.TranslateOptions(format=frmt,
+                                    outputBounds=[*wmts_to_rad(self, self.upper_left_corner),
+                                                  *wmts_to_rad(self, self.lower_right_corner)],
+                                    outputSRS="WGS84")
         gdal.Translate(dstName, sourceDS, options=opt)
 
     @property
