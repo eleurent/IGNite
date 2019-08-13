@@ -5,20 +5,21 @@ Note: coordinates should be given as latitude,longitude decimal degrees.
 Usage: ignite.py [options] <upper_left> <lower_right> <zoom>
 
 Options:
-  -h --help          Show this screen.
-  --out_name <file>  Output filename [default: out].
-  --no-caching       Do not save temporary tiles for caching and fast reloading.
-  --processes <p>    Number of processes used for requests [default: 4].
+  -h --help                Show this screen.
+  --processes <p>          Number of processes used for requests [default: 4].
+  --out_name <file>        Output filename [default: out].
+  --cache-folder <folder>  Cache directory [default: cache].
+  --no-caching             Do not save temporary tiles for caching and fast reloading.
 """
+
 from docopt import docopt
-from io import BytesIO
 from multiprocessing.pool import Pool
 from pathlib import Path
-
+from osgeo import gdal
+from PIL import Image
+from io import BytesIO
 import requests
 import tqdm
-from PIL import Image
-from osgeo import gdal
 
 from utils import get_capabilities, deg_to_wmts, wmts_to_deg, str_to_point
 
@@ -75,7 +76,7 @@ class IGNMap(object):
         :param tile: (x, y) WMTS coordinates of the tile
         :return: the tile image
         """
-        path = self.cache_folder / "{}_{}.jpg".format(tile[0], tile[1])
+        path = Path(self.config["--cache-folder"]) / "{}_{}_{}.jpg".format(self.zoom, tile[0], tile[1])
         try:
             img = Image.open(path)
         except FileNotFoundError:
@@ -98,10 +99,6 @@ class IGNMap(object):
                                                       *reversed(wmts_to_deg(self, self.max_point))],
                                         outputSRS="WGS84")
         gdal.Translate(dst_name, source_ds, options=options)
-
-    @property
-    def cache_folder(self):
-        return Path("tmp_{}".format(self.zoom))
 
 
 if __name__ == '__main__':
