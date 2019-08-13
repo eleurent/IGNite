@@ -1,7 +1,5 @@
 """IGNite: generate the geo-referenced IGN map of an area.
 
-Note: coordinates should be given as latitude,longitude decimal degrees.
-
 Usage: ignite.py [options] <upper_left> <lower_right> <zoom>
 
 Options:
@@ -10,6 +8,8 @@ Options:
   --out <file>             Output filename [default: out].
   --cache-folder <folder>  Cache directory [default: cache].
   --no-caching             Do not save temporary tiles for caching and fast reloading.
+Note:
+  Coordinates should be given as latitude,longitude in decimal degrees.
 """
 
 from docopt import docopt
