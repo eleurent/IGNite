@@ -7,70 +7,59 @@ from pandas import DataFrame
 from scipy.optimize import brentq
 
 
-def decimal_degrees_to_rad(location):
-    return tuple(reversed(tuple(map(math.radians, map(float, location.split(","))))))
+def str_to_point(location):
+    return tuple(map(float, location.split(",")))
 
 
-def dms_to_rad(angle_deg):
-    degre = float(angle_deg.split('°')[0])
-    minutes = float(angle_deg.split('°')[1].split("'")[0])
-    seconds = float(angle_deg.split('°')[1].split("'")[1])
-    angle_dec = degre + (minutes / 60) + (seconds / 3600)
-    return math.radians(angle_dec)
+def deg_to_wmts(ign_map, point_deg, earth_radius=6378137.0, render_pixel_size=0.00028):
+    tile_radius = ign_map.scale_denominator * render_pixel_size * ign_map.tile_size[1]
+    long_lat_rad = tuple(reversed(tuple(map(math.radians, point_deg))))
+    x = earth_radius * long_lat_rad[0]
+    y = earth_radius * math.log(math.tan(long_lat_rad[1] / 2 + math.pi / 4))
 
-
-def rad_to_wmts(map, point_rad, earth_radius=6378137.0, render_pixel_size=0.00028):
-    tile_radius = map.scale_denominator * render_pixel_size * map.tile_size[1]
-    x = earth_radius * point_rad[0]
-    y = earth_radius * math.log(math.tan(point_rad[1] / 2 + math.pi / 4))
-
-    col = +int((x - map.top_left_corner[0]) / tile_radius)
-    row = -int((y - map.top_left_corner[1]) / tile_radius)
+    col = +int((x - ign_map.top_left_corner[0]) / tile_radius)
+    row = -int((y - ign_map.top_left_corner[1]) / tile_radius)
     return col, row
 
 
-def wmts_to_deg(map, point, earth_radius=6378137.0, render_pixel_size=0.00028):
-    tile_radius = map.scale_denominator * render_pixel_size * map.tile_size[1]
-    coords = (map.top_left_corner[0] + point[0] * tile_radius, map.top_left_corner[1] - point[1] * tile_radius)
-    x = math.degrees(coords[0] / earth_radius)
+def wmts_to_deg(ign_map, point, earth_radius=6378137.0, render_pixel_size=0.00028):
+    tile_radius = ign_map.scale_denominator * render_pixel_size * ign_map.tile_size[1]
+    coords = (ign_map.top_left_corner[0] + point[0] * tile_radius, ign_map.top_left_corner[1] - point[1] * tile_radius)
 
     def y_x(x):
         return coords[1] - earth_radius * math.log(math.tan(x / 2 + math.pi / 4))
 
-    y = math.degrees(brentq(y_x, 0, math.pi / 2))
-    return x, y
+    return math.degrees(brentq(y_x, 0, math.pi / 2)), math.degrees(coords[0] / earth_radius)
 
 
-def get_capabilities(file_name="capabilities.xml"):
+def get_capabilities(url, file_name="capabilities.xml"):
+    # Fetch file
     if not Path(file_name).exists():
-        url = "http://wxs.ign.fr/an7nvfzojv5wa96dsga5nk8w/geoportail/wmts?SERVICE=WMTS&REQUEST=GetCapabilities"
         response = requests.get(url)
         Path(file_name).write_bytes(response.content)
 
-    res = []
+    # Parse file
     tree = etree.parse(file_name)
     root = tree.getroot()
-    # Dictionnaire des namespaces en remplacant celui de None par default
+
+    # Namespaces
     dict_ns = root.nsmap
     dict_ns['default'] = dict_ns[None]
     del dict_ns[None]
 
-    # Selection du Layer souhaité
-    layer_elt_list = [elt for elt in root.findall('default:Contents/default:Layer', dict_ns) if
+    # Layer selection
+    layer_elements = [elt for elt in root.findall('default:Contents/default:Layer', dict_ns) if
                       elt.findall('ows:Identifier', dict_ns)[0].text == 'GEOGRAPHICALGRIDSYSTEMS.MAPS']
+    layer_elements = layer_elements[0].findall('default:TileMatrixSetLink', dict_ns)[
+        0].getchildren()  # Returns a list elts[TileMatrixSet, TileMatrixSetLimits]
 
-    layer_elts = layer_elt_list[0].findall('default:TileMatrixSetLink', dict_ns)[
-        0].getchildren()  # Returns list elts[TileMatrixSet, TileMatrixSetLimits]
+    # Set TileMatrixSet
+    d = {layer_elements[0].tag.split('}')[1]: layer_elements[0].text}
+    res = [d]
 
-    # Alimentation du TileMatrixset dans layer
-    d = {}
-    d[layer_elts[0].tag.split('}')[1]] = layer_elts[0].text
-    res.append(d)
-
-    # Alimentation des zooms
+    # Set zooms
     d1 = {}
-    for elt in layer_elts[1].findall('default:TileMatrixLimits',
-                                     dict_ns):  # Parcourir tous les niveaux de zooms dispo
+    for elt in layer_elements[1].findall('default:TileMatrixLimits', dict_ns):
         zoom = elt.findall('default:TileMatrix', dict_ns)[0].text
         d1[zoom] = {}
         for x in elt.getchildren()[1:]:
@@ -78,7 +67,7 @@ def get_capabilities(file_name="capabilities.xml"):
 
         # Alimentation desTitleMatrixSet
         TMS = [elt for elt in root.findall('default:Contents/default:TileMatrixSet', dict_ns) if
-               elt.findall('ows:Identifier', dict_ns)[0].text == layer_elts[0].text]
+               elt.findall('ows:Identifier', dict_ns)[0].text == layer_elements[0].text]
         TMS_select = [elt for elt in TMS[0].findall('default:TileMatrix', dict_ns) if
                       elt.find('ows:Identifier', dict_ns).text == zoom]
         for y in TMS_select[0].getchildren()[1:]:
