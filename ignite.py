@@ -7,7 +7,7 @@ Usage: ignite.py [options] <upper_left> <lower_right> <zoom>
 Options:
   -h --help                Show this screen.
   --processes <p>          Number of processes used for requests [default: 4].
-  --out_name <file>        Output filename [default: out].
+  --out <file>             Output filename [default: out].
   --cache-folder <folder>  Cache directory [default: cache].
   --no-caching             Do not save temporary tiles for caching and fast reloading.
 """
@@ -47,7 +47,7 @@ class IGNMap(object):
         self.size = (self.max_point[0] - self.min_point[0] + 1, self.max_point[1] - self.min_point[1] + 1)
 
         self.generate()
-        self.geo_reference("{}.pdf".format(self.config["--out_name"]), "{}.jpg".format(self.config["--out_name"]))
+        self.geo_reference()
 
     def generate(self):
         """
@@ -65,7 +65,7 @@ class IGNMap(object):
         for tile, img in tqdm.tqdm(zip(tiles, images), total=len(tiles), desc="Merging"):
             map_img.paste(img, ((tile[0] - self.min_point[0]) * self.tile_size[0],
                                 (tile[1] - self.min_point[1]) * self.tile_size[1]))
-        map_img.save("{}.jpg".format(self.config["--out_name"]), "JPEG")
+        map_img.save(Path(self.config["--out"]).with_suffix(".jpg"), "JPEG")
         return map_img
 
     def get_tile(self, tile):
@@ -87,18 +87,18 @@ class IGNMap(object):
                 img.save(path)
         return img
 
-    def geo_reference(self, dst_name, source_ds, _format="PDF"):
+    def geo_reference(self, _format="PDF"):
         """
-            Embed a map image to a geotagged DST file.
-        :param dst_name: geo-referenced dst file
-        :param source_ds: source map image
+            Embed the map image to a geotagged DST file.
         :param _format: dst file format
         """
         options = gdal.TranslateOptions(format=_format,
                                         outputBounds=[*reversed(wmts_to_deg(self, self.min_point)),
                                                       *reversed(wmts_to_deg(self, self.max_point))],
                                         outputSRS="WGS84")
-        gdal.Translate(dst_name, source_ds, options=options)
+        gdal.Translate(str(Path(self.config["--out"]).with_suffix(".pdf")),
+                       str(Path(self.config["--out"]).with_suffix(".jpg")),
+                       options=options)
 
 
 if __name__ == '__main__':
