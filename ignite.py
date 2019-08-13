@@ -7,8 +7,8 @@ Usage: ignite.py [options] <upper_left> <lower_right> <zoom>
 Options:
   -h --help          Show this screen.
   --out_name <file>  Output filename [default: out].
-  --save_tiles       Save temporary tiles, for caching and fast reloading.
-  --processes <p>    Number of processes used for requests [default: 4]
+  --no-caching       Do not save temporary tiles for caching and fast reloading.
+  --processes <p>    Number of processes used for requests [default: 4].
 """
 from docopt import docopt
 from io import BytesIO
@@ -29,7 +29,7 @@ class IGNMap(object):
                "&TileMatrix={}&TileCol={}&TileRow={}"
     CAPABILITIES_URL = "http://wxs.ign.fr/an7nvfzojv5wa96dsga5nk8w/geoportail/wmts?SERVICE=WMTS&REQUEST=GetCapabilities"
 
-    def __init__(self, min_point, max_point, zoom, config={}):
+    def __init__(self, min_point, max_point, zoom, config):
         self.min_point = min_point
         self.max_point = max_point
         self.zoom = zoom
@@ -54,7 +54,6 @@ class IGNMap(object):
         :return: the map image
         """
         # Fetch tiles
-        self.cache_folder.mkdir(parents=True, exist_ok=True)
         tiles = [(x, y) for x in range(self.min_point[0], self.max_point[0] + 1)
                         for y in range(self.min_point[1], self.max_point[1] + 1)]
         with Pool(int(self.config["--processes"])) as p:
@@ -76,13 +75,15 @@ class IGNMap(object):
         :param tile: (x, y) WMTS coordinates of the tile
         :return: the tile image
         """
-        path = self.cache_folder / "{}_{}.jpg".format(tile[0] - self.min_point[0], tile[1] - self.min_point[1])
+        path = self.cache_folder / "{}_{}.jpg".format(tile[0], tile[1])
         try:
             img = Image.open(path)
         except FileNotFoundError:
             response = requests.get(self.TILE_URL.format(self.zoom, tile[0], tile[1]))
             img = Image.open(BytesIO(response.content))
-            img.save(path)
+            if not self.config["--no-caching"]:
+                path.parent.mkdir(parents=True, exist_ok=True)
+                img.save(path)
         return img
 
     def geo_reference(self, dst_name, source_ds, _format="PDF"):
