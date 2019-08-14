@@ -65,6 +65,7 @@ class IGNMap(object):
         for tile, img in tqdm.tqdm(zip(tiles, images), total=len(tiles), desc="Merging"):
             map_img.paste(img, ((tile[0] - self.min_point[0]) * self.tile_size[0],
                                 (tile[1] - self.min_point[1]) * self.tile_size[1]))
+        Path(self.config["--out"]).parent.mkdir(parents=True, exist_ok=True)
         map_img.save(Path(self.config["--out"]).with_suffix(".jpg"), "JPEG")
         return map_img
 
