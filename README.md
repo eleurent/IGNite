@@ -4,7 +4,11 @@ Generate the geo-referenced IGN map of an area.
 ## Installation
 
 Required packages:
-* [gdal](https://anaconda.org/conda-forge/gdal)
+* gdal
+  * with pip: 
+         `sudo apt install gdal-bin libgdal-dev`
+         ```pip install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==`gdal-config --version` ```
+  * [with conda](https://anaconda.org/conda-forge/gdal)
 * `pip install docopt tqdm`
 
 ## Usage
