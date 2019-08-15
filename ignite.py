@@ -7,6 +7,7 @@ Options:
   --processes <p>          Number of processes used for requests [default: 4].
   --out <file>             Output filename [default: out].
   --cache-folder <folder>  Cache directory [default: cache].
+  --capabilities <file>    Capabilities filename [default: capabilities.xml]
   --no-caching             Do not save temporary tiles for caching and fast reloading.
 Note:
   Coordinates should be given as latitude,longitude in decimal degrees.
@@ -20,6 +21,7 @@ from PIL import Image
 from io import BytesIO
 import requests
 import tqdm
+import logging
 
 from utils import get_capabilities, deg_to_wmts, wmts_to_deg, str_to_point
 
@@ -38,7 +40,7 @@ class IGNMap(object):
 
         # Set map dimensions
         self.size = None
-        self.capabilities = get_capabilities(self.CAPABILITIES_URL)[1][str(zoom)]
+        self.capabilities = get_capabilities(self.CAPABILITIES_URL, config["--capabilities"])[1][str(zoom)]
         self.scale_denominator = float(self.capabilities['ScaleDenominator'])
         self.tile_size = (int(self.capabilities['TileWidth']), int(self.capabilities['TileHeight']))
         self.top_left_corner = tuple(map(float, self.capabilities['TopLeftCorner'].split(' ')))
@@ -57,7 +59,8 @@ class IGNMap(object):
         # Fetch tiles
         tiles = [(x, y) for x in range(self.min_point[0], self.max_point[0] + 1)
                         for y in range(self.min_point[1], self.max_point[1] + 1)]
-        with Pool(int(self.config["--processes"])) as p:
+        processes = int(self.config["--processes"]) if self.config["--processes"] else None
+        with Pool(processes) as p:
             images = list(tqdm.tqdm(p.imap(self.get_tile, tiles), total=len(tiles), desc="Fetching"))
 
         # Merge tiles
