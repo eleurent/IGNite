@@ -27,9 +27,10 @@ def home():
 
 def ignite(upper_left, lower_right, zoom):
     config = {
-        "--processes": 4,
-        "--out": "app/generated/out",
-        "--cache-folder": "cache",
+        "--processes": None,
+        "--out": "/var/www/ignite/app/generated/out_{}_{}_{}".format(upper_left, lower_right, zoom),
+        "--cache-folder": "/var/www/ignite/app/cache",
+        "--capabilities": "/var/www/ignite/app/capabilities.xml",
         "--no-caching": None
     }
     # Parse arguments
@@ -56,7 +57,7 @@ def ignite(upper_left, lower_right, zoom):
     # Generate map
     ign_map = IGNMap(upper_left, lower_right, zoom, config)
     pdf_path = Path(ign_map.config["--out"]).with_suffix(".pdf")
-    return send_from_directory(directory=pdf_path.parent.relative_to(pdf_path.parent.parts[0]),
+    return send_from_directory(directory=pdf_path.parent,
                                filename=pdf_path.name,
                                mimetype='application/pdf')
 
