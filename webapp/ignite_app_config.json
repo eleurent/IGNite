@@ -1,0 +1,8 @@
+{
+    "secret_key": "topsecret!",
+    "--processes": null,
+    "--out": "/var/www/ignite/webapp/generated/out_{}_{}_{}",
+    "--cache-folder": "/var/www/ignite/webapp/cache",
+    "--capabilities": "/var/www/ignite/webapp/capabilities.xml",
+    "--no-caching": null
+}

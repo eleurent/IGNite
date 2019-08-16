@@ -8,8 +8,8 @@ import sys
 import logging
 logging.basicConfig(stream=sys.stderr)
 
-# Run app
+# Run webapp
 sys.path.insert(0, '/var/www/ignite/')
-sys.path.insert(0, '/var/www/ignite/app/')
+sys.path.insert(0, '/var/www/ignite/webapp/')
 from ignite_app import app as application
 application.secret_key = 'thisissecret!'
