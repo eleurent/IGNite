@@ -14,9 +14,9 @@
     {% for message in get_flashed_messages() %}
     <p style="color: red;">{{ message }}</p>
     {% endfor %}
-    <form method="POST">
+    <form method="POST" id="#idForm" action="generate">
       <p>Set upper-left coordinates to: <input type="text" name="upper_left" value="{{ upper_left }}"></p>
-      <p>Set lower-right coordinates to to: <input type="text" name="lower_right" value="{{ lower_right }}"></p>
+      <p>Set lower-right coordinates to: <input type="text" name="lower_right" value="{{ lower_right }}"></p>
       <p>Set zoom level to: <input type="text" name="zoom" value="{{ zoom }}"></p>
       <input type="submit" name="submit" value="Send">
     </form>
@@ -40,13 +40,7 @@
           $.ajax({
               type: 'POST',
               url: 'longtask',
-              success: function(data, status, request) {
-                  status_url = request.getResponseHeader('Location');
-                  update_progress(status_url, nanobar, div[0]);
-              },
-              error: function() {
-                  alert('Unexpected error');
-              }
+
           });
       }
       function update_progress(status_url, nanobar, status_div) {
@@ -78,6 +72,24 @@
       $(function() {
           $('#start-bg-job').click(start_long_task);
       });
+
+      $("#idForm").submit(function(e) {
+          e.preventDefault(); // avoid to execute the actual submit of the form.
+          var form = $(this);
+          var url = form.attr('action');
+          $.ajax({
+              type: "POST",
+              url: url,
+              data: form.serialize(), // serializes the form's elements.
+              success: function(data, status, request) {
+                  status_url = request.getResponseHeader('Location');
+                  update_progress(status_url, nanobar, div[0]);
+              },
+              error: function() {
+                  alert('Unexpected error');
+              }
+          });
+    });
   </script>
   </body>
 </html>

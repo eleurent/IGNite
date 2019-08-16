@@ -20,26 +20,24 @@ celery = Celery(app.name,
 celery.conf.update(app.config)
 
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/')
 def home():
-    if request.method == 'GET':
-        return render_template('index.html',
-                               upper_left=session.get("upper_left", ""),
-                               lower_right=session.get("lower_right", ""),
-                               zoom=session.get("zoom", ""))
+    return render_template('index.html',
+                           upper_left=session.get("upper_left", ""),
+                           lower_right=session.get("lower_right", ""),
+                           zoom=session.get("zoom", ""))
 
+
+@app.route('/generate/', methods=['POST'])
+def generate():
+    # Get arguments
     upper_left = request.form['upper_left']
     lower_right = request.form['lower_right']
     zoom = request.form['zoom']
     session['upper_left'] = upper_left
     session['lower_right'] = lower_right
     session['zoom'] = zoom
-    return ignite(upper_left, lower_right, zoom)
 
-
-def ignite(upper_left, lower_right, zoom):
-    ignite_config = config.copy()
-    ignite_config["--out"] = ignite_config["--out"].format(upper_left, lower_right, zoom)
     # Parse arguments
     fail = False
     try:
@@ -57,16 +55,25 @@ def ignite(upper_left, lower_right, zoom):
     except ValueError:
         flash('Invalid parameter zoom: {}'.format(zoom))
         fail = True
-
     if fail:
-        return redirect(url_for('home'))
+        return jsonify({}), 400, {'Location': None}
 
-    # Generate map
+    task = generate_task.apply_async((upper_left, lower_right, zoom))
+    return jsonify({}), 202, {'Location': url_for('taskstatus', task_id=task.id)}
+
+
+@celery.task(bind=True)
+def generate_task(self, upper_left, lower_right, zoom):
+    """Background task that runs a long function with progress reports."""
+    ignite_config = config.copy()
+    ignite_config["--out"] = ignite_config["--out"].format(upper_left, lower_right, zoom)
+    self.update_state(state='PROGRESS',
+                      meta={'current': 0, 'total': 100,
+                            'status': "ignite in progress"})
     ign_map = IGNMap(upper_left, lower_right, zoom, ignite_config)
-    pdf_path = Path(ign_map.config["--out"]).with_suffix(".pdf")
-    return send_from_directory(directory=pdf_path.parent,
-                               filename=pdf_path.name,
-                               mimetype='application/pdf')
+    print(str(Path(ign_map.config["--out"]).with_suffix(".pdf")))
+    return {'current': 100, 'total': 100, 'status': 'Task completed!',
+            'result': str(Path(ign_map.config["--out"]).with_suffix(".pdf"))}
 
 
 @celery.task(bind=True)
