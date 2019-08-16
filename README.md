@@ -6,13 +6,17 @@ Get the georeferenced IGN map of any area.
 
 ## Installation
 
-Required packages:
-* gdal
-  * with pip: 
-         `sudo apt install gdal-bin libgdal-dev`
-         ```pip install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==`gdal-config --version` ```
-  * [with conda](https://anaconda.org/conda-forge/gdal)
-* `pip install docopt tqdm`
+### Gdal
+Install with pip: 
+```
+sudo apt install gdal-bin libgdal-dev`
+pip install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==`gdal-config --version`
+```
+Or [with conda](https://anaconda.org/conda-forge/gdal)
+
+### Other dependencies
+
+`pip install -r requirements.txt`
 
 ## Usage
 ```
