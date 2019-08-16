@@ -24,3 +24,7 @@ Options:
 Note:
   Coordinates should be given as latitude,longitude in decimal degrees.
 ```
+
+## Credits
+
+Thanks to Amine Benssy :bicyclist: for the idea and original implementation.
