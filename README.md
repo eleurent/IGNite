@@ -1,5 +1,8 @@
 # IGNite :world_map::fire:
-Generate the geo-referenced IGN map of an area.
+Get the georeferenced IGN map of any area.
+
+* Backend: maps provided by [IGN](https://geoservices.ign.fr/), georeferencing by [GDAL](https://gdal.org/)
+* Webapp: powered by [Flask](https://github.com/pallets/flask)
 
 ## Installation
 
