@@ -9,8 +9,8 @@ from ignite import IGNMap
 from utils import str_to_point
 
 
-with open(Path(__file__) / "ignite_app_config.json") as f:
-    config = json.load(f.read())
+with open(Path(__file__).parent / "ignite_app_config.json") as f:
+    config = json.load(f)
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = config["secret_key"]
@@ -72,7 +72,6 @@ def ignite(upper_left, lower_right, zoom):
 @celery.task(bind=True)
 def long_task(self):
     """Background task that runs a long function with progress reports."""
-    print("starting long task")
     verb = ['Starting up', 'Booting', 'Repairing', 'Loading', 'Checking']
     adjective = ['master', 'radiant', 'silent', 'harmonic', 'fast']
     noun = ['solar array', 'particle reshaper', 'cosmic ray', 'orbiter', 'bit']
@@ -94,12 +93,6 @@ def long_task(self):
 @app.route('/longtask', methods=['POST'])
 def longtask():
     task = long_task.apply_async()
-
-    while not task.ready():
-        print(f'State={task.state}, info={task.info}')
-        time.sleep(1)
-
-    print(f'State={task.state}, info={task.info}')
     return jsonify({}), 202, {'Location': url_for('taskstatus',
                                                   task_id=task.id)}
 
