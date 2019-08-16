@@ -19,6 +19,7 @@ from pathlib import Path
 from osgeo import gdal
 from PIL import Image
 from io import BytesIO
+import numpy as np
 import requests
 import tqdm
 import logging
@@ -33,8 +34,8 @@ class IGNMap(object):
     CAPABILITIES_URL = "http://wxs.ign.fr/an7nvfzojv5wa96dsga5nk8w/geoportail/wmts?SERVICE=WMTS&REQUEST=GetCapabilities"
 
     def __init__(self, min_point, max_point, zoom, config):
-        self.min_point = min_point
-        self.max_point = max_point
+        self.min_point = np.asarray(min_point)
+        self.max_point = np.asarray(max_point)
         self.zoom = zoom
         self.config = config
 
@@ -43,10 +44,10 @@ class IGNMap(object):
         self.capabilities = get_capabilities(self.CAPABILITIES_URL, config["--capabilities"])[1][str(zoom)]
         self.scale_denominator = float(self.capabilities['ScaleDenominator'])
         self.tile_size = (int(self.capabilities['TileWidth']), int(self.capabilities['TileHeight']))
-        self.top_left_corner = tuple(map(float, self.capabilities['TopLeftCorner'].split(' ')))
+        self.top_left_corner = np.array(list(map(float, self.capabilities['TopLeftCorner'].split(' '))))
         self.min_point = deg_to_wmts(self, min_point)
         self.max_point = deg_to_wmts(self, max_point)
-        self.size = (self.max_point[0] - self.min_point[0] + 1, self.max_point[1] - self.min_point[1] + 1)
+        self.size = self.max_point - self.min_point + 1
 
         self.generate()
         self.geo_reference()
@@ -98,7 +99,7 @@ class IGNMap(object):
         """
         options = gdal.TranslateOptions(format=_format,
                                         outputBounds=[*reversed(wmts_to_deg(self, self.min_point)),
-                                                      *reversed(wmts_to_deg(self, self.max_point))],
+                                                      *reversed(wmts_to_deg(self, self.max_point + 1))],
                                         outputSRS="WGS84")
         gdal.Translate(str(Path(self.config["--out"]).with_suffix(".pdf")),
                        str(Path(self.config["--out"]).with_suffix(".jpg")),

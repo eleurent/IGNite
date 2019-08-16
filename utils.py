@@ -1,6 +1,6 @@
 from pathlib import Path
 
-import math
+import numpy as np
 import requests
 from lxml import etree
 from pandas import DataFrame
@@ -13,23 +13,20 @@ def str_to_point(location):
 
 def deg_to_wmts(ign_map, point_deg, earth_radius=6378137.0, render_pixel_size=0.00028):
     tile_radius = ign_map.scale_denominator * render_pixel_size * ign_map.tile_size[1]
-    long_lat_rad = tuple(reversed(tuple(map(math.radians, point_deg))))
-    x = earth_radius * long_lat_rad[0]
-    y = earth_radius * math.log(math.tan(long_lat_rad[1] / 2 + math.pi / 4))
-
-    col = +int((x - ign_map.top_left_corner[0]) / tile_radius)
-    row = -int((y - ign_map.top_left_corner[1]) / tile_radius)
-    return col, row
+    position = earth_radius * np.array([np.radians(point_deg)[1],
+                                        np.log(np.tan(np.radians(point_deg)[0] / 2 + np.pi / 4))])
+    wmts = np.floor((position - ign_map.top_left_corner) / tile_radius) * np.array([1, -1])
+    return wmts.astype(np.int)
 
 
 def wmts_to_deg(ign_map, point, earth_radius=6378137.0, render_pixel_size=0.00028):
     tile_radius = ign_map.scale_denominator * render_pixel_size * ign_map.tile_size[1]
-    coords = (ign_map.top_left_corner[0] + point[0] * tile_radius, ign_map.top_left_corner[1] - point[1] * tile_radius)
+    coords = ign_map.top_left_corner + point * np.array([1, -1]) * tile_radius
 
     def y_x(x):
-        return coords[1] - earth_radius * math.log(math.tan(x / 2 + math.pi / 4))
+        return coords[1] - earth_radius * np.log(np.tan(x / 2 + np.pi / 4))
 
-    return math.degrees(brentq(y_x, 0, math.pi / 2)), math.degrees(coords[0] / earth_radius)
+    return np.array([np.degrees(brentq(y_x, 0, np.pi / 2)), np.degrees(coords[0] / earth_radius)])
 
 
 def get_capabilities(url, file_name="capabilities.xml"):
