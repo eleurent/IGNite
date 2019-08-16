@@ -18,7 +18,7 @@ Or [with conda](https://anaconda.org/conda-forge/gdal)
 
 `pip install -r requirements.txt`
 
-## Usage
+## Command Line Usage
 ```
 Usage: ignite.py [options] <upper_left> <lower_right> <zoom>
 
