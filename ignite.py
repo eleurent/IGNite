@@ -14,7 +14,8 @@ Note:
 """
 
 from docopt import docopt
-from multiprocessing.pool import Pool
+# from multiprocessing.pool import Pool
+from multiprocessing.dummy import Pool
 from pathlib import Path
 from osgeo import gdal
 from PIL import Image
