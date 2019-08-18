@@ -1,8 +1,6 @@
 import json
 from pathlib import Path
 from flask import Flask, request, send_from_directory, render_template, redirect, flash, url_for, session, jsonify
-import random
-import time
 from celery import Celery
 
 from ignite import IGNMap
@@ -71,42 +69,13 @@ def generate_task(self, upper_left, lower_right, zoom):
                       meta={'current': 0, 'total': 100,
                             'status': "ignite in progress"})
     ign_map = IGNMap(upper_left, lower_right, zoom, ignite_config)
-    print(str(Path(ign_map.config["--out"]).with_suffix(".pdf")))
     return {'current': 100, 'total': 100, 'status': 'Task completed!',
-            'result': str(Path(ign_map.config["--out"]).with_suffix(".pdf"))}
-
-
-@celery.task(bind=True)
-def long_task(self):
-    """Background task that runs a long function with progress reports."""
-    verb = ['Starting up', 'Booting', 'Repairing', 'Loading', 'Checking']
-    adjective = ['master', 'radiant', 'silent', 'harmonic', 'fast']
-    noun = ['solar array', 'particle reshaper', 'cosmic ray', 'orbiter', 'bit']
-    message = ''
-    total = random.randint(10, 20)
-    for i in range(total):
-        if not message or random.random() < 0.25:
-            message = '{0} {1} {2}...'.format(random.choice(verb),
-                                              random.choice(adjective),
-                                              random.choice(noun))
-        self.update_state(state='PROGRESS',
-                          meta={'current': i, 'total': total,
-                                'status': message})
-        time.sleep(0.2)
-    return {'current': 100, 'total': 100, 'status': 'Task completed!',
-            'result': 42}
-
-
-@app.route('/longtask', methods=['POST'])
-def longtask():
-    task = long_task.apply_async()
-    return jsonify({}), 202, {'Location': url_for('taskstatus',
-                                                  task_id=task.id)}
+            'result': "get/{}".format(Path(ign_map.config["--out"]).with_suffix(".pdf").name)}
 
 
 @app.route('/status/<task_id>')
 def taskstatus(task_id):
-    task = long_task.AsyncResult(task_id)
+    task = generate_task.AsyncResult(task_id)
     if task.state == 'PENDING':
         # job did not start yet
         response = {
@@ -133,6 +102,10 @@ def taskstatus(task_id):
             'status': str(task.info),  # this is the exception raised
         }
     return jsonify(response)
+
+@app.route('/get/<filename>')
+def get_file(filename):
+    return send_from_directory('static/generated', filename, as_attachment=False)
 
 
 if __name__ == "__main__":
