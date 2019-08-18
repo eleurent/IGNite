@@ -50,29 +50,33 @@ class IGNMap(object):
         self.max_point = deg_to_wmts(self, max_point)
         self.size = self.max_point - self.min_point + 1
 
-        self.generate()
+    def run(self):
+        self.merge(self.fetch_all())
         self.geo_reference()
 
-    def generate(self):
-        """
-            Generate the map image by fetching and merging all tiles.
-        :return: the map image
-        """
-        # Fetch tiles
-        tiles = [(x, y) for x in range(self.min_point[0], self.max_point[0] + 1)
-                        for y in range(self.min_point[1], self.max_point[1] + 1)]
+    def fetch_all(self):
+        """ Fetch all tiles. """
         processes = int(self.config["--processes"]) if self.config["--processes"] else None
         with Pool(processes) as p:
-            images = list(tqdm.tqdm(p.imap(self.get_tile, tiles), total=len(tiles), desc="Fetching"))
+            return list(tqdm.tqdm(p.imap(self.get_tile, self.tiles()), total=len(self.tiles()), desc="Fetching"))
 
-        # Merge tiles
+    def merge(self, images):
+        """ Merge all tiles. """
         map_img = Image.new('RGB', (self.tile_size[0] * self.size[0], self.tile_size[1] * self.size[1]))
-        for tile, img in tqdm.tqdm(zip(tiles, images), total=len(tiles), desc="Merging"):
+        for tile, img in zip(self.tiles(), images):
             map_img.paste(img, ((tile[0] - self.min_point[0]) * self.tile_size[0],
                                 (tile[1] - self.min_point[1]) * self.tile_size[1]))
         Path(self.config["--out"]).parent.mkdir(parents=True, exist_ok=True)
         map_img.save(Path(self.config["--out"]).with_suffix(".jpg"), "JPEG")
         return map_img
+
+    def tiles(self):
+        return [(x, y) for x in range(self.min_point[0], self.max_point[0] + 1)
+                       for y in range(self.min_point[1], self.max_point[1] + 1)]
+
+    def fetch_all_generator(self):
+        for tile in self.tiles():
+            yield self.get_tile(tile)
 
     def get_tile(self, tile):
         """
@@ -113,3 +117,4 @@ if __name__ == '__main__':
                      str_to_point(args["<lower_right>"]),
                      int(args["<zoom>"]),
                      args)
+    ign_map.run()

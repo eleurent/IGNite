@@ -65,10 +65,15 @@ def generate_task(self, upper_left, lower_right, zoom):
     """Background task that runs a long function with progress reports."""
     ignite_config = config.copy()
     ignite_config["--out"] = ignite_config["--out"].format(upper_left, lower_right, zoom)
-    self.update_state(state='PROGRESS',
-                      meta={'current': 0, 'total': 100,
-                            'status': "ignite in progress"})
     ign_map = IGNMap(upper_left, lower_right, zoom, ignite_config)
+    images = []
+    for i, tile in enumerate(ign_map.fetch_all_generator()):
+        images.append(tile)
+        self.update_state(state='PROGRESS',
+                          meta={'current': i, 'total': int(ign_map.size[0] * ign_map.size[1]),
+                                'status': "Fetching tile {}/{}".format(i+1, ign_map.size[0] * ign_map.size[1])})
+    ign_map.merge(images)
+    ign_map.geo_reference()
     return {'current': 100, 'total': 100, 'status': 'Task completed!',
             'result': "get/{}".format(Path(ign_map.config["--out"]).with_suffix(".pdf").name)}
 
@@ -84,7 +89,7 @@ def taskstatus(task_id):
             'total': 1,
             'status': 'Pending...'
         }
-    elif task.state != 'FAILURE':
+    elif task.state != 'FAILURE' and task.info:
         response = {
             'state': task.state,
             'current': task.info.get('current', 0),
