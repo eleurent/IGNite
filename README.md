@@ -2,7 +2,7 @@
 Get the georeferenced IGN map of any area.
 
 * Backend: maps provided by [IGN](https://geoservices.ign.fr/), georeferencing by [GDAL](https://gdal.org/)
-* Webapp: powered by [Flask](https://github.com/pallets/flask)
+* Webapp: powered by [Flask](https://github.com/pallets/flask) and [Celery](https://github.com/celery/celery)
 
 ## Command Line Usage
 ```
@@ -21,12 +21,11 @@ Note:
 ## Installation
 
 ### Gdal
-Install with pip: 
+Install [with conda](https://anaconda.org/conda-forge/gdal) or with pip: 
 ```
 sudo apt install gdal-bin libgdal-dev`
 pip install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==`gdal-config --version`
 ```
-Or [with conda](https://anaconda.org/conda-forge/gdal)
 
 ### Other dependencies
 
