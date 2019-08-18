@@ -23,7 +23,7 @@ Note:
 ### Gdal
 Install [with conda](https://anaconda.org/conda-forge/gdal) or with pip: 
 ```
-sudo apt install gdal-bin libgdal-dev`
+sudo apt install gdal-bin libgdal-dev
 pip install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==`gdal-config --version`
 ```
 
