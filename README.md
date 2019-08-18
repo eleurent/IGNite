@@ -4,20 +4,6 @@ Get the georeferenced IGN map of any area.
 * Backend: maps provided by [IGN](https://geoservices.ign.fr/), georeferencing by [GDAL](https://gdal.org/)
 * Webapp: powered by [Flask](https://github.com/pallets/flask)
 
-## Installation
-
-### Gdal
-Install with pip: 
-```
-sudo apt install gdal-bin libgdal-dev`
-pip install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==`gdal-config --version`
-```
-Or [with conda](https://anaconda.org/conda-forge/gdal)
-
-### Other dependencies
-
-`pip install -r requirements.txt`
-
 ## Command Line Usage
 ```
 Usage: ignite.py [options] <upper_left> <lower_right> <zoom>
@@ -31,6 +17,20 @@ Options:
 Note:
   Coordinates should be given as latitude,longitude in decimal degrees.
 ```
+
+## Installation
+
+### Gdal
+Install with pip: 
+```
+sudo apt install gdal-bin libgdal-dev`
+pip install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==`gdal-config --version`
+```
+Or [with conda](https://anaconda.org/conda-forge/gdal)
+
+### Other dependencies
+
+`pip install -r requirements.txt`
 
 ## Credits
 
