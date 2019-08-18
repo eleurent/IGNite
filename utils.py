@@ -33,6 +33,7 @@ def get_capabilities(url, file_name="capabilities.xml"):
     # Fetch file
     if not Path(file_name).exists():
         response = requests.get(url)
+        Path(file_name).parent.mkdir(parents=True, exist_ok=True)
         Path(file_name).write_bytes(response.content)
 
     # Parse file
