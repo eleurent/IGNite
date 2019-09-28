@@ -33,4 +33,5 @@ pip install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL
 
 ## Credits
 
-Thanks to Amine Benssy :bicyclist: for the idea and original implementation.
+Thanks to Amine Benssy :bicyclist: for the idea and original implementation.  
+Thanks to Daniel Beilharz :runner: for coming up with this neat name.
