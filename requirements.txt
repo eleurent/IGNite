@@ -10,7 +10,7 @@ GDAL==2.4.0
 idna==2.8
 importlib-metadata==0.19
 itsdangerous==1.1.0
-Jinja2==2.10.1
+Jinja2==2.11.3
 kombu==4.6.4
 lxml==4.6.2
 MarkupSafe==1.1.1
