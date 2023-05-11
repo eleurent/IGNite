@@ -3,12 +3,14 @@ from docopt import docopt
 from multiprocessing.dummy import Pool
 from pathlib import Path
 from osgeo import gdal
-from PIL import Image
+import PIL
 from io import BytesIO
 import numpy as np
 import requests
 import tqdm
 import logging
+
+logger = logging.getLogger(__name__)
 
 
 class TiledMap:
@@ -46,7 +48,7 @@ class TiledMap:
     def merge(self, images):
         """ Merge all tiles. """
         tile_size = images[0].size
-        map_img = Image.new('RGB', (tile_size[0] * self.size[0], tile_size[1] * self.size[1]))
+        map_img = PIL.Image.new('RGB', (tile_size[0] * self.size[0], tile_size[1] * self.size[1]))
         for tile, img in zip(self.tiles(), images):
             map_img.paste(img, ((tile[1] - self.min_point[0]) * tile_size[0],
                                 (tile[2] - self.min_point[1]) * tile_size[1]))
@@ -75,14 +77,23 @@ class TiledMap:
         path = Path(self.cache_folder) / f"{z}_{x}_{y}"
         path = path.with_suffix(Path(self.TILE_URL).suffix)
         try:
-            img = Image.open(path)
+            img = PIL.Image.open(path)
         except FileNotFoundError:
             response = requests.get(self.TILE_URL.format(z, x, y))
-            img = Image.open(BytesIO(response.content))
+            if not response.ok:
+                logger.warning(f'Something wrong happened at tile {tile}, continuing... Error: Response not ok, reason:{response.reason}')
+                return None
+            try:
+                img = PIL.Image.open(BytesIO(response.content))
+            except PIL.UnidentifiedImageError as e:
+                logger.warning(f'Something wrong happened at tile {tile}, continuing... Error:{e}')
+                return None
             if not self.no_caching:
                 path.parent.mkdir(parents=True, exist_ok=True)
                 img.save(path)
-        return img
+        img_copy = img.copy()
+        img.close()  # Explicitly close to avoid a "Too many open files" error.
+        return img_copy
 
     def geo_reference(self, _format="PDF"):
         """
