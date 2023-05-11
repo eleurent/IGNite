@@ -1,6 +1,7 @@
 # IGNite artifact files
 capabilities.xml
 cache
+out
 
 # IDE
 .idea
