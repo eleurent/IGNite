@@ -1,7 +1,10 @@
 # IGNite :world_map::fire:
 Get the georeferenced IGN map of any area.
 
-* Backend: maps provided by [IGN](https://geoservices.ign.fr/), georeferencing by [GDAL](https://gdal.org/)
+* Backend:
+  * French maps by [IGN](https://geoservices.ign.fr/)
+  * global maps by [CyclOSM](https://www.cyclosm.org)
+  * georeferencing by [GDAL](https://gdal.org/)
 * Webapp: powered by [Flask](https://github.com/pallets/flask) and [Celery](https://github.com/celery/celery)
 
 ## Command Line Usage
