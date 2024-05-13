@@ -22,7 +22,7 @@ from backend.cyclosm import CyclOSMMap
 
 
 def parse_position(location: str) -> np.ndarray:
-    return np.asarray(tuple(map(float, location.split(","))))
+    return np.array(tuple(map(float, location.split(","))))
 
 
 if __name__ == '__main__':
