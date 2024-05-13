@@ -22,7 +22,9 @@ class TiledMap:
                  output_path: str,
                  cache_folder: str,
                  no_caching: bool,
-                 processes: int):
+                 processes: int,
+                 jpg_quality: float = 0.95
+        ):
         self.min_point = min_point
         self.max_point = max_point
         self.zoom = zoom
@@ -31,6 +33,7 @@ class TiledMap:
         self.cache_folder = cache_folder
         self.no_caching = no_caching
         self.processes = processes
+        self.jpg_quality = jpg_quality
 
         self.size = self.max_point - self.min_point + 1
 
@@ -53,7 +56,7 @@ class TiledMap:
             map_img.paste(img, ((tile[1] - self.min_point[0]) * tile_size[0],
                                 (tile[2] - self.min_point[1]) * tile_size[1]))
         Path(self.output_path).parent.mkdir(parents=True, exist_ok=True)
-        map_img.save(Path(self.output_path).with_suffix(".jpg"), "JPEG")
+        map_img.save(Path(self.output_path).with_suffix(".jpg"), "JPEG", quality=self.jpg_quality)
         return map_img
 
     def tiles(self):
