@@ -6,7 +6,6 @@ chardet==3.0.4
 Click==7.0
 docopt
 Flask==1.1.1
-GDAL==2.4.0
 idna==2.8
 importlib-metadata==0.19
 itsdangerous==1.1.0
