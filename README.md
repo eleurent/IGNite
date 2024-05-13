@@ -1,11 +1,13 @@
 # IGNite :world_map::fire:
-Get the georeferenced IGN map of any area.
+Get the georeferenced IGN map of any area. 
 
 * Backend:
   * French maps by [IGN](https://geoservices.ign.fr/)
   * global maps by [CyclOSM](https://www.cyclosm.org)
   * georeferencing by [GDAL](https://gdal.org/)
 * Webapp: powered by [Flask](https://github.com/pallets/flask) and [Celery](https://github.com/celery/celery)
+
+## [Open in colab ![Open in colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/eleurent/IGNite/blob/master/IGNite.ipynb)
 
 ## Command Line Usage
 ```
