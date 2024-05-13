@@ -75,7 +75,7 @@ class TiledMap:
         """
         z, x, y = tile
         path = Path(self.cache_folder) / f"{z}_{x}_{y}"
-        path = path.with_suffix(Path(self.TILE_URL).suffix)
+        path = path.with_suffix(".png")  # or Path(self.TILE_URL).suffix
         try:
             img = PIL.Image.open(path)
         except FileNotFoundError:
