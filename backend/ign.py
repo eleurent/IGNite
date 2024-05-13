@@ -23,14 +23,16 @@ class IGNMap(TiledMap):
         cache_folder: str,
         no_caching: bool,
         processes: int
+        convert_to_wmts: bool = True
     ):
         # Get WMTS coordinates from GPS coordinates
         self.capabilities = self.get_capabilities(self.CAPABILITIES_URL)[1][str(zoom)]
         self.scale_denominator = float(self.capabilities['ScaleDenominator'])
         self.tile_size = (int(self.capabilities['TileWidth']), int(self.capabilities['TileHeight']))
         self.top_left_corner = np.array(list(map(float, self.capabilities['TopLeftCorner'].split(' '))))
-        min_point = self.deg_to_wmts(min_point)
-        max_point = self.deg_to_wmts(max_point)
+        if convert_to_wmts:
+            min_point = self.deg_to_wmts(min_point)
+            max_point = self.deg_to_wmts(max_point)
 
         super().__init__(
             min_point=min_point,
