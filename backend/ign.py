@@ -31,8 +31,8 @@ class IGNMap(TiledMap):
         self.tile_size = (int(self.capabilities['TileWidth']), int(self.capabilities['TileHeight']))
         self.top_left_corner = np.array(list(map(float, self.capabilities['TopLeftCorner'].split(' '))))
         if convert_to_wmts:
-            min_point = self.deg_to_wmts(min_point)
-            max_point = self.deg_to_wmts(max_point)
+            min_point = self.deg_to_wmts(min_point[0], min_point[1], zoom)
+            max_point = self.deg_to_wmts(max_point[0], max_point[1], zoom)
 
         super().__init__(
             min_point=min_point,
