@@ -82,7 +82,7 @@ class IGNMap(TiledMap):
 
         # Layer selection
         layer_elements = [elt for elt in root.findall('default:Contents/default:Layer', dict_ns) if
-                          elt.findall('ows:Identifier', dict_ns)[0].text == 'GEOGRAPHICALGRIDSYSTEMS.MAPS.OVERVIEW']
+                          elt.findall('ows:Identifier', dict_ns)[0].text == 'GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2']
         layer_elements = layer_elements[0].findall('default:TileMatrixSetLink', dict_ns)[
             0].getchildren()  # Returns a list elts[TileMatrixSet, TileMatrixSetLimits]
 
