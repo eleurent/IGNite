@@ -23,16 +23,14 @@ class IGNMap(TiledMap):
         cache_folder: str,
         no_caching: bool,
         processes: int,
-        convert_to_wmts: bool = True,
     ):
         # Get WMTS coordinates from GPS coordinates
         self.capabilities = self.get_capabilities(self.CAPABILITIES_URL)[1][str(zoom)]
         self.scale_denominator = float(self.capabilities['ScaleDenominator'])
         self.tile_size = (int(self.capabilities['TileWidth']), int(self.capabilities['TileHeight']))
         self.top_left_corner = np.array(list(map(float, self.capabilities['TopLeftCorner'].split(' '))))
-        if convert_to_wmts:
-            min_point = self.deg_to_wmts(min_point[0], min_point[1], zoom)
-            max_point = self.deg_to_wmts(max_point[0], max_point[1], zoom)
+        min_point = self.deg_to_wmts(min_point[0], min_point[1], zoom)
+        max_point = self.deg_to_wmts(max_point[0], max_point[1], zoom)
 
         super().__init__(
             min_point=min_point,
@@ -51,7 +49,7 @@ class IGNMap(TiledMap):
         position = earth_radius * np.array([np.radians(point_deg)[1],
                                             np.log(np.tan(np.radians(point_deg)[0] / 2 + np.pi / 4))])
         wmts = np.floor((position - self.top_left_corner) / tile_radius) * np.array([1, -1])
-        return wmts.astype(np.int)
+        return wmts.astype(np.int32)
 
     def wmts_to_deg(self, x_tile: int, y_tile: int, zoom: int, earth_radius=6378137.0, render_pixel_size=0.00028):
         point = np.array([x_tile, y_tile])
