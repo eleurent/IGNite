@@ -25,7 +25,7 @@ class IGNMap(TiledMap):
         processes: int
     ):
         # Get WMTS coordinates from GPS coordinates
-        self.capabilities = self.get_capabilities(self.CAPABILITIES_URL, config["--capabilities"])[1][str(zoom)]
+        self.capabilities = self.get_capabilities(self.CAPABILITIES_URL)[1][str(zoom)]
         self.scale_denominator = float(self.capabilities['ScaleDenominator'])
         self.tile_size = (int(self.capabilities['TileWidth']), int(self.capabilities['TileHeight']))
         self.top_left_corner = np.array(list(map(float, self.capabilities['TopLeftCorner'].split(' '))))
