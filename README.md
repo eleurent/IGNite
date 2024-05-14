@@ -1,5 +1,7 @@
 # IGNite :world_map::fire:
-Get the georeferenced IGN map of any area. 
+Get georeferenced maps of any area.
+
+These maps can be stored on device, and used with mobile apps such as [Avenza Maps](https://store.avenza.com/pages/app-features) (supports GPX).
 
 * Backend:
   * French maps by [IGN](https://geoservices.ign.fr/)
