@@ -23,7 +23,7 @@ class IGNMap(TiledMap):
         cache_folder: str,
         no_caching: bool,
         processes: int,
-        jpg_quality: float = 0.95
+        jpg_quality: int = 95
     ):
         # Get WMTS coordinates from GPS coordinates
         self.capabilities = self.get_capabilities(self.CAPABILITIES_URL)[1][str(zoom)]

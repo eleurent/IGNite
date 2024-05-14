@@ -23,7 +23,7 @@ class TiledMap:
                  cache_folder: str,
                  no_caching: bool,
                  processes: int,
-                 jpg_quality: float = 0.95
+                 jpg_quality: int = 95
         ):
         self.min_point = min_point
         self.max_point = max_point

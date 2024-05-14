@@ -13,7 +13,8 @@ class CyclOSMMap(TiledMap):
         output_path: str,
         cache_folder: str,
         no_caching: bool,
-        processes: int
+        processes: int,
+        jpg_quality: int = 95,
     ):
         # Get WMTS coordinates from GPS coordinates
         min_point = self.deg_to_wmts(min_point[0], min_point[1], zoom)
@@ -28,6 +29,7 @@ class CyclOSMMap(TiledMap):
             cache_folder=cache_folder,
             no_caching=no_caching,
             processes=processes,
+            jpg_quality=jpg_quality,
         )
 
     @staticmethod
